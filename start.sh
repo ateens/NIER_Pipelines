@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-PORT="${PORT:-9099}"
+PORT="${PORT:-12001}"
 HOST="${HOST:-0.0.0.0}"
 # Default value for PIPELINES_DIR
 PIPELINES_DIR=${PIPELINES_DIR:-./pipelines}
@@ -25,6 +25,9 @@ reset_pipelines_dir() {
     echo "RESET_PIPELINES_DIR is not set to true. No action taken."
   fi
 }
+
+# Example usage of the function
+reset_pipelines_dir
 
 # Function to install requirements if requirements.txt is provided
 install_requirements() {
@@ -102,54 +105,29 @@ install_frontmatter_requirements() {
 }
 
 
-# Parse command line arguments for mode
-MODE="full"   # select a runmode ("setup", "run", "full" (setup + run))
-while [[ "$#" -gt 0 ]]; do
-  case $1 in
-    --mode) MODE="$2"; shift ;;
-    *) echo "Unknown parameter passed: $1"; exit 1 ;;
-  esac
-  shift
-done
-if [[ "$MODE" != "setup" && "$MODE" != "run" && "$MODE" != "full" ]]; then
-  echo "Invalid script mode: $MODE"
-  echo "  Example usage: './start.sh --mode [setup|run|full]' "
-  exit 1
-fi
 
-# Function to handle different modes, added 1/29/24
-if [[ "$MODE" == "setup" || "$MODE" == "full" ]]; then
-  echo "Download + install Executed in mode: $MODE"
-
-  reset_pipelines_dir
-  if [[ -n "$PIPELINES_REQUIREMENTS_PATH" ]]; then
-    install_requirements "$PIPELINES_REQUIREMENTS_PATH"
-  else
-    echo "PIPELINES_REQUIREMENTS_PATH not specified. Skipping installation of requirements."
+# Check if PIPELINES_URLS environment variable is set and non-empty
+if [[ -n "$PIPELINES_URLS" ]]; then
+  if [ ! -d "$PIPELINES_DIR" ]; then
+    mkdir -p "$PIPELINES_DIR"
   fi
 
-  if [[ -n "$PIPELINES_URLS" ]]; then
-    if [ ! -d "$PIPELINES_DIR" ]; then
-      mkdir -p "$PIPELINES_DIR"
+  # Split PIPELINES_URLS by ';' and iterate over each path
+  IFS=';' read -ra ADDR <<< "$PIPELINES_URLS"
+  for path in "${ADDR[@]}"; do
+    download_pipelines "$path" "$PIPELINES_DIR"
+  done
+
+  for file in "$pipelines_dir"/*; do
+    if [[ -f "$file" ]]; then
+      install_frontmatter_requirements "$file"
     fi
-
-    IFS=';' read -ra ADDR <<< "$PIPELINES_URLS"
-    for path in "${ADDR[@]}"; do
-      download_pipelines "$path" "$PIPELINES_DIR"
-    done
-
-    for file in "$PIPELINES_DIR"/*; do
-      if [[ -f "$file" ]]; then
-        install_frontmatter_requirements "$file"
-      fi
-    done
-  else
-    echo "PIPELINES_URLS not specified. Skipping pipelines download and installation."
-  fi
+  done
+else
+  echo "PIPELINES_URLS not specified. Skipping pipelines download and installation."
 fi
 
-if [[ "$MODE" == "run" || "$MODE" == "full" ]]; then
-  echo "Running via Mode: $MODE"
-  uvicorn main:app --host "$HOST" --port "$PORT" --forwarded-allow-ips '*'
-fi
 
+
+# Start the server
+uvicorn main:app --host "$HOST" --port "$PORT" --forwarded-allow-ips '*'
