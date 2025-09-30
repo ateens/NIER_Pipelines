@@ -12,7 +12,13 @@ from .models.task_heads import TembedDivPredHead, TembedCondPredHead, TembedKLPr
 from .models.losses import hierarchical_contrastive_loss
 from .utils import take_per_row, split_with_nan, centerize_vary_length_series, torch_pad_nan, torch_pad_with
 
-import wandb
+# Optional wandb import - only needed for training, not inference
+try:
+    import wandb
+    WANDB_AVAILABLE = True
+except ImportError:
+    WANDB_AVAILABLE = False
+    wandb = None
 
 class TRep:
     '''The TRep model'''
@@ -145,7 +151,8 @@ class TRep:
         train_loader = DataLoader(train_dataset, batch_size=min(self.batch_size, len(train_dataset)), shuffle=True, drop_last=True)
         optimizer = torch.optim.AdamW(self._net.parameters(), lr=self.lr)
         
-        wandb.watch(self._net, log="all", log_freq=10)
+        if WANDB_AVAILABLE:
+            wandb.watch(self._net, log="all", log_freq=10)
         
         loss_log = []
         train_start = time.time()
@@ -236,12 +243,13 @@ class TRep:
             
             cum_loss /= n_epoch_iters
             loss_log.append(cum_loss)
-            wandb.log({
-                "epoch_loss": cum_loss,
-                "epoch_time": time.time() - train_start,
-                "epochs_completed": self.n_epochs,
-                "epoch_iters": n_epoch_iters 
-            })
+            if WANDB_AVAILABLE:
+                wandb.log({
+                    "epoch_loss": cum_loss,
+                    "epoch_time": time.time() - train_start,
+                    "epochs_completed": self.n_epochs,
+                    "epoch_iters": n_epoch_iters 
+                })
             if verbose >= 2:
                 print(f"Epoch #{self.n_epochs}: loss={cum_loss}")
                 
@@ -544,8 +552,9 @@ class TRep:
         if reprs.shape[0] == 0:
             return
 
-        table = wandb.Table(columns=["embedding", "label"])
-        for vec, label in zip(reprs, labels):
-            table.add_data(vec.tolist(), str(label))  # label은 str로 넣어야 색상 제대로 나옴
+        if WANDB_AVAILABLE:
+            table = wandb.Table(columns=["embedding", "label"])
+            for vec, label in zip(reprs, labels):
+                table.add_data(vec.tolist(), str(label))  # label은 str로 넣어야 색상 제대로 나옴
 
-        wandb.log({f"embedding_epoch_{epoch}": table}, step=epoch)
+            wandb.log({f"embedding_epoch_{epoch}": table}, step=epoch)
