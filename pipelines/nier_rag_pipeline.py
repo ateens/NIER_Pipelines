@@ -29,6 +29,7 @@ from typing import List, Generator
 from pydantic import BaseModel
 import os
 import logging
+import time
 
 
 class Pipeline:
@@ -359,6 +360,7 @@ class Pipeline:
         
         멀티턴 지원: messages 파라미터를 통해 이전 대화 히스토리를 받아서 LLM에 전달합니다.
         """
+        start_time = time.time()
         print("###PIPE### user_messages: ", user_message, flush=True)
         print("###PIPE### conversation_history length: ", len(messages) if messages else 0, flush=True)
         logging.info(f"###PIPE### user_messages: {user_message}")
@@ -463,7 +465,15 @@ class Pipeline:
             yield f"입력 검증 중 오류가 발생했습니다: {str(ve)}"
         except Exception as e:
             # Handle unexpected errors
+            elapsed_time = (time.time() - start_time) * 1000
+            print(f"###PIPE### Error occurred after {elapsed_time:.2f} ms", flush=True)
+            logging.error(f"###PIPE### Error occurred after {elapsed_time:.2f} ms: {str(e)}")
             yield f"처리 중 오류가 발생했습니다: {str(e)}"
+        
+        # 성공적으로 완료된 경우 전체 소요 시간 로깅
+        elapsed_time = (time.time() - start_time) * 1000
+        print(f"###PIPE### Total execution time: {elapsed_time:.2f} ms", flush=True)
+        logging.info(f"###PIPE### Total execution time: {elapsed_time:.2f} ms")
     
     def handle_general_question_with_history(self, question: str, conversation_history: List[dict]) -> Generator[str, None, None]:
         """

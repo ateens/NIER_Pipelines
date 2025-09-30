@@ -40,7 +40,7 @@ class TRep:
         after_epoch_callback=None,
         pred_loss_method='MSE',
         train_data_for_logging=None,
-        train_labels_for_logging=None,        
+        train_labels_for_logging=None,
     ):
         ''' Initialize a TRep model.
         
