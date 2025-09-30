@@ -75,21 +75,35 @@ class Pipeline:
         
         # self.db_path = "/home/1_Dataset/NIER/download/21222324/2024.csv"
         self.db_path = ""
+
+        #Ts2Vec embedding model path
+        # self.embedding_model_path = "/home/0_code/OpenWebUI/pipelines/NIERModules/chroma_ts2vec/model.pkl"
+
         # T-Rep embedding model path
         # TODO: Update this path to point to actual trained T-Rep weights
-        self.embedding_model_path = "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model.pt"
-        # self.embedding_model_path = {"SO2": "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model_pkl/model_SO2.pt",
-        #                             "O3": "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model_pkl/model_O3.pt",
-        #                             "CO": "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model_pkl/model_CO.pt",
-        #                             "NO": "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model_pkl/model_NO.pt",
-        #                             "NO2": "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model_pkl/model_NO2.pt"}
+        # self.embedding_model_path = "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model.pt"
+        self.embedding_model_path = {"SO2": "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model_pkl/model_SO2.pt",
+                                    "O3": "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model_pkl/model_O3.pt",
+                                    "CO": "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model_pkl/model_CO.pt",
+                                    "NO": "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model_pkl/model_NO.pt",
+                                    "NO2": "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model_pkl/model_NO2.pt"}
 
-        self.embedding_function = TRepEmbedding(
-            weight_path=self.embedding_model_path,
+
+        #Ts2Vec embedding function
+        # self.embedding_function = Ts2VecEmbedding(
+        #     weight_path=self.embedding_model_path, device="cuda")
+
+        # T-Rep embedding function
+        self.embedding_functions = {
+            elem: TRepEmbedding(
+            weight_path=path,
             device="cuda",
             encoding_window='full_series',
             time_embedding='learnable'  # or 't2v_sin', 'gaussian', etc.
-        )
+            )
+            for elem, path in self.embedding_model_path.items()
+        }
+
         # self.embedding_functions = {
         #     elem: TRepEmbedding(weight_path=path, device="cuda")
         #     for elem, path in self.embedding_model_path.items()
@@ -136,21 +150,23 @@ class Pipeline:
         # This function is called when the server is stopped.
         print(f"on_shutdown:{__name__}")
 
-    def embed_values(self, values: str) -> dict:
-        print("###EMBED_VALUES###", flush=True)
-        logging.info("###EMBED_VALUES###")
-        """Step 3: Embed time-series values"""
-        print(f"Embedding values...{values}")
-        embedding = self.embedding_function([values])[0]
+    # Ts2Vec embedding
+    # def embed_values(self, values: str) -> dict:
+    #     print("###EMBED_VALUES###", flush=True)
+    #     logging.info("###EMBED_VALUES###")
+    #     """Step 3: Embed time-series values"""
+    #     print(f"Embedding values...{values}")
+    #     embedding = self.embedding_function([values])[0]
 
-        return embedding.tolist()
-
-    # def embed_values(self, values: str, element: str) -> list:
-    #     embedding_fn = self.embedding_functions.get(element)
-    #     if embedding_fn is None:
-    #         raise KeyError(f"Unsupported element: {element}")
-    #     embedding = embedding_fn([values])[0]
     #     return embedding.tolist()
+
+    # T-Rep embedding
+    def embed_values(self, values: str, element: str) -> list:
+        embedding_fn = self.embedding_functions.get(element)
+        if embedding_fn is None:
+            raise KeyError(f"Unsupported element: {element}")
+        embedding = embedding_fn([values])[0]
+        return embedding.tolist()
 
     def build_explain_prompt(self, original_data, station_comparison_results, similar_data):
         """
@@ -418,9 +434,13 @@ class Pipeline:
                     original_data, related_station_data, "station")
 
                 # Embed the time-series values
-                embedding = self.embed_values(original_data["values"])
-                # embedding = self.embed_values(
-                #     original_data["values"], query['element'])
+
+                # Ts2Vec embedding
+                # embedding = self.embed_values(original_data["values"])
+
+                # T-Rep embedding
+                embedding = self.embed_values(
+                    original_data["values"], query['element'])
 
                 # Query ChromaDB for similar data
                 similar_data = query_chromadb_with_filter(
