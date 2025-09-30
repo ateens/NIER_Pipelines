@@ -71,12 +71,13 @@ class Pipeline:
         
         # self.db_path = "/home/1_Dataset/NIER/download/21222324/2024.csv"
         self.db_path = ""
-        self.embedding_model_path = "/home/0_code/OpenWebUI/pipelines/NIERModules/chroma_ts2vec/model.pkl"
-        # self.embedding_model_path = {"SO2": "/home/0_code/OpenWebUI/pipelines/NIERModules/chroma_ts2vec/model_pkl/model_SO2.pt",
-        #                             "O3": "/home/0_code/OpenWebUI/pipelines/NIERModules/chroma_ts2vec/model_pkl/model_O3.pt",
-        #                             "CO": "/home/0_code/OpenWebUI/pipelines/NIERModules/chroma_ts2vec/model_pkl/model_CO.pt",
-        #                             "NO": "/home/0_code/OpenWebUI/pipelines/NIERModules/chroma_ts2vec/model_pkl/model_NO.pt",
-        #                             "NO2": "/home/0_code/OpenWebUI/pipelines/NIERModules/chroma_ts2vec/model_pkl/model_NO2.pt"}
+        # self.embedding_model_path = "/home/0_code/OpenWebUI/pipelines/NIERModules/chroma_ts2vec/model.pkl"
+        self.embedding_model_path = "/home/0_code/NIER_Pipelines/NIERModules/chroma_ts2vec/model.pkl"
+        # self.embedding_model_path = {"SO2": "/home/0_code/NIER_Pipelines/NIERModules/chroma_ts2vec/model_pkl/model_SO2.pt",
+        #                             "O3": "/home/0_code/NIER_Pipelines/NIERModules/chroma_ts2vec/model_pkl/model_O3.pt",
+        #                             "CO": "/home/0_code/NIER_Pipelines/NIERModules/chroma_ts2vec/model_pkl/model_CO.pt",
+        #                             "NO": "/home/0_code/NIER_Pipelines/NIERModules/chroma_ts2vec/model_pkl/model_NO.pt",
+        #                             "NO2": "/home/0_code/NIER_Pipelines/NIERModules/chroma_ts2vec/model_pkl/model_NO2.pt"}
 
         self.embedding_function = Ts2VecEmbedding(
             weight_path=self.embedding_model_path, device="cuda")
