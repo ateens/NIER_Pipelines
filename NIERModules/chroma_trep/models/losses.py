@@ -6,7 +6,7 @@ from torch import nn
 import numpy as np
 import torch.nn.functional as F
 
-from utils import torch_kl
+from ..utils import torch_kl
 
 pred_loss_methods = {
     "MSE": nn.MSELoss(),            # Default Loss
