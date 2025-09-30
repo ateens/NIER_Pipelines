@@ -19,7 +19,7 @@ def parse_query(ollama_host:str, model:str,user_input: str) -> Union[dict, str]:
         Union[dict, str]: A structured query dictionary or the original user input.
     """    
     
-    print("###PARSE_QUERY### user_input:", user_input)
+    print("###PARSE_QUERY### user_input:", user_input, flush=True)
 
     ts_pattern = re.compile(
         r"^(?P<region>\d{6}),\s*"                   # 6-digit region
@@ -47,7 +47,7 @@ def parse_query(ollama_host:str, model:str,user_input: str) -> Union[dict, str]:
         }
     # Step 1-2: Use Ollama API for Few-shot Prompt if Regex fails
     try:
-        print("###PARSE_QUERY### Parsing User Input with Ollama API.")
+        print("###PARSE_QUERY### Parsing User Input with Ollama API.", flush=True)
         response = parse_with_ollama(
             ollama_host=ollama_host, 
             model=model,

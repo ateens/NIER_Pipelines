@@ -43,11 +43,19 @@ class StationNetwork:
         excluding the station itself.
         """
         if self.station_exists(station_id):
-            related_stations = list(self.DEFAULT_STATION_GROUPS[station_id][element].keys())
-            if related_stations is not None:
-                return related_stations
-            else:
-                print(f"[Error] No related stations found for station ID {station_id}.")
+            try:
+                if element in self.DEFAULT_STATION_GROUPS[station_id]:
+                    related_stations = list(self.DEFAULT_STATION_GROUPS[station_id][element].keys())
+                    if related_stations is not None:
+                        return related_stations
+                    else:
+                        print(f"[Error] No related stations found for station ID {station_id}.")
+                        return []
+                else:
+                    print(f"[Warning] Element '{element}' not found for station {station_id}. Available elements: {list(self.DEFAULT_STATION_GROUPS[station_id].keys())}")
+                    return []
+            except KeyError as e:
+                print(f"[Error] KeyError accessing station data: {e}")
                 return []
         else:
             print(f"[Error] Station ID {station_id} not found.")

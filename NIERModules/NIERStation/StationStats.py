@@ -12,7 +12,7 @@ class StationStats:
                 User Defined Station Stats Dictionary as a dict or path to a pickle file. Defaults to None.
         """        
         
-        self.DECAULT_STATION_STATS_PATH = "/home/0_code/OpenWebUI/pipelines/NIERModules/NIERStation/monthly_stats_v1.pkl"
+        self.DECAULT_STATION_STATS_PATH = "/home/0_code/NIER_Pipelines/NIERModules/NIERStation/monthly_stats_v1.pkl"
         self.station_stats_dict = self._load_station_stats_dict(StationStatDict)
         
     def _load_station_stats_dict(self, StationStatDict: Optional[Union[dict, str]] = None) -> dict:

@@ -62,6 +62,16 @@ def get_readonly_db(POSTGRESQL_USER: str,
     )
 
     engine = create_engine(POSTGRESQL_DATABASE_URL, echo=False)
+    # engine = create_engine(
+    #     POSTGRESQL_DATABASE_URL, 
+    #     echo=False,
+    #     connect_args={
+    #         "connect_timeout": 10,
+    #         "options": "-c statement_timeout=30000"
+    #     },
+    #     pool_timeout=30,
+    #     pool_recycle=3600
+    # )
 
     ReadOnlySessionLocal = ReadOnlySession(
         autocommit=False, autoflush=False, bind=engine)
@@ -116,7 +126,7 @@ def fetch_data(POSTGRESQL_USER: str,
     start_time = adjusted_start_time
 
     # TODO: REMOVE ARGUMENT use_csv[TEST ONLY] AND IMPLEMENT POSTGRESQL FETCHING ONLY
-    print("###FETCH_DATA###")
+    print("###FETCH_DATA###", flush=True)
     """Step 2: Filter data from CSV or DB"""
     if db_path != '':
         try:
@@ -150,18 +160,44 @@ def fetch_data(POSTGRESQL_USER: str,
                 )
                 .filter(AisDataAir.data_knd_cd == 'DATAR1')
                 .filter(AisDataAir.msrstn_cd == station)
-                .filter(AisDataAir.msrmt_ymdh >= start_time)
-                .filter(AisDataAir.msrmt_ymdh <= end_time)
+                .filter(AisDataAir.msrmt_ymdh >= datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S").strftime("%Y%m%d%H"))
+                .filter(AisDataAir.msrmt_ymdh <= datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S").strftime("%Y%m%d%H"))
             )
             
+            print(f"###DEBUG### SQL Query Parameters:", flush=True)
+            print(f"  - station: {station} (type: {type(station)})", flush=True)
+            print(f"  - start_time: {start_time} (type: {type(start_time)})", flush=True)
+            print(f"  - end_time: {end_time} (type: {type(end_time)})", flush=True)
+            print(f"  - element: {element}", flush=True)
+            print(f"###DEBUG### Generated SQL:", flush=True)
+            print(str(stmt), flush=True)
+            
             df = pd.read_sql_query(stmt.statement, db.bind)
+            
+            print(f"###DEBUG### 1. Raw DataFrame shape: {df.shape}", flush=True)
+            print(f"###DEBUG### 1. Raw DataFrame columns: {df.columns.tolist()}", flush=True)
+            if len(df) > 0:
+                print(f"###DEBUG### 1. First 3 rows:", flush=True)
+                print(df.head(3), flush=True)
+                print(f"###DEBUG### 1. VALUE column type: {df['VALUE'].dtype}", flush=True)
+                print(f"###DEBUG### 1. VALUE non-null count: {df['VALUE'].count()}", flush=True)
+                print(f"###DEBUG### 1. VALUE sample values: {df['VALUE'].head().tolist()}", flush=True)
+            else:
+                print("###DEBUG### 1. DataFrame is empty!", flush=True)
             
             df['MDATETIME'] = pd.to_datetime(
                 df['MDATETIME'], format='%Y%m%d%H', errors='coerce')
             
+            print(f"###DEBUG### 2. Flag column: {element}_FLAG", flush=True)
+            if len(df) > 0 and f"{element}_FLAG" in df.columns:
+                print(f"###DEBUG### 2. Flag distribution:", flush=True)
+                print(df[f"{element}_FLAG"].value_counts(), flush=True)
+            
             # Flag 1: Normal, other: Check rflag.xlsx
             # Treat other flags than 1 as NaN
             df.loc[df[f"{element}_FLAG"] != 1, 'VALUE'] = float('nan')
+            
+            print(f"###DEBUG### 3. After flag filtering - VALUE non-null count: {df['VALUE'].count()}", flush=True)
             
             # Step 2: `AisDataAbnrm`
             wrong_stmt = (
@@ -188,9 +224,13 @@ def fetch_data(POSTGRESQL_USER: str,
             df[f"{element}_LABEL"] = df["WRONG_CODE"].fillna(0).astype(int)
             df.drop(columns=["WRONG_CODE"], inplace=True)  # 불필요한 컬럼 제거
 
-            
+            print("df['VALUE'].head()", df['VALUE'].head(), flush=True)
             values = df['VALUE'].tolist()
+            print(f"###DEBUG### 4. Final values count: {len(values)}", flush=True)
+            print(f"###DEBUG### 4. Final values sample: {values[:10] if values else 'EMPTY'}", flush=True)
+    
     values = [float('nan') if v == 999999.0 else v for v in values]
+    print(f"###DEBUG### 5. After 999999 filtering: {len(values)} values", flush=True)
     return {
         "region": station,
         "start_time": start_time,

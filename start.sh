@@ -130,4 +130,4 @@ fi
 
 
 # Start the server
-uvicorn main:app --host "$HOST" --port "$PORT" --forwarded-allow-ips '*'
+uvicorn main:app --host "$HOST" --port "$PORT" --forwarded-allow-ips '*' --log-level debug
