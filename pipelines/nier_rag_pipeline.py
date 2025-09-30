@@ -1,18 +1,22 @@
 """
 title: nier_rag_pipeline
-author: standard_lee@inha.edu
-date: 2025-2-17
-version: 1.0.0
-description: A pipeline for using TEXT_TO_TS_TO_EMBEDDING(text->ts->embedding) for retrieving neareast neighbors from a database using the ChromaDB.
-requirements: chromadb, requests, pandas
+author: ateens8120@gmail.com
+date: 2025-9-30
+version: 2.0.0
+description: A pipeline for using TEXT_TO_TS_TO_EMBEDDING(text->ts->embedding) for retrieving nearest neighbors from a database using ChromaDB with T-Rep embeddings.
+requirements: chromadb, requests, pandas, torch
 
-!!! Requires Ollma 0.5.0 or higher. !!!
+!!! Requires Ollama 0.5.0 or higher. !!!
+
+Changelog:
+- v2.0.0 (2025-9-30): Replaced TS2Vec with T-Rep for improved time series representation learning
+- v1.0.0 (2025-2-17): Initial implementation with TS2Vec
 """
 # TODO: 20250217 - I refactored the overall code structure. Rewrite docstrings and comments for each package.
 
 from NIERModules.NIERStation import StationNetwork, GeoSpatialNetwork, StationStats
 from NIERModules.chroma_db_handler import get_chromadb_collection_id
-from NIERModules.chroma_ts2vec import Ts2VecEmbedding
+from NIERModules.chroma_trep import TRepEmbedding
 from NIERModules.ollama_handler import (call_ollama_chat_api,
                                         query_general_question)
 from NIERModules.chroma_db_handler import (get_chromadb_collection_id,
@@ -71,18 +75,23 @@ class Pipeline:
         
         # self.db_path = "/home/1_Dataset/NIER/download/21222324/2024.csv"
         self.db_path = ""
-        # self.embedding_model_path = "/home/0_code/OpenWebUI/pipelines/NIERModules/chroma_ts2vec/model.pkl"
-        self.embedding_model_path = "/home/0_code/NIER_Pipelines/NIERModules/chroma_ts2vec/model.pkl"
-        # self.embedding_model_path = {"SO2": "/home/0_code/NIER_Pipelines/NIERModules/chroma_ts2vec/model_pkl/model_SO2.pt",
-        #                             "O3": "/home/0_code/NIER_Pipelines/NIERModules/chroma_ts2vec/model_pkl/model_O3.pt",
-        #                             "CO": "/home/0_code/NIER_Pipelines/NIERModules/chroma_ts2vec/model_pkl/model_CO.pt",
-        #                             "NO": "/home/0_code/NIER_Pipelines/NIERModules/chroma_ts2vec/model_pkl/model_NO.pt",
-        #                             "NO2": "/home/0_code/NIER_Pipelines/NIERModules/chroma_ts2vec/model_pkl/model_NO2.pt"}
+        # T-Rep embedding model path
+        # TODO: Update this path to point to actual trained T-Rep weights
+        self.embedding_model_path = "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model.pt"
+        # self.embedding_model_path = {"SO2": "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model_pkl/model_SO2.pt",
+        #                             "O3": "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model_pkl/model_O3.pt",
+        #                             "CO": "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model_pkl/model_CO.pt",
+        #                             "NO": "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model_pkl/model_NO.pt",
+        #                             "NO2": "/home/0_code/NIER_Pipelines/NIERModules/chroma_trep/model_pkl/model_NO2.pt"}
 
-        self.embedding_function = Ts2VecEmbedding(
-            weight_path=self.embedding_model_path, device="cuda")
+        self.embedding_function = TRepEmbedding(
+            weight_path=self.embedding_model_path,
+            device="cuda",
+            encoding_window='full_series',
+            time_embedding='learnable'  # or 't2v_sin', 'gaussian', etc.
+        )
         # self.embedding_functions = {
-        #     elem: Ts2VecEmbedding(weight_path=path, device="cuda")
+        #     elem: TRepEmbedding(weight_path=path, device="cuda")
         #     for elem, path in self.embedding_model_path.items()
         # }
         self.chromadb_url = "http://localhost:8000/api/v1/collections"
