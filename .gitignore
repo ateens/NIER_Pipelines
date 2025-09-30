@@ -243,3 +243,6 @@ pyrightconfig.json
 *.csv
 *.pkl
 *.json
+
+# ChromaDB database files
+chroma_db/

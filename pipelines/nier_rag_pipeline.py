@@ -56,7 +56,8 @@ class Pipeline:
                 "pipelines": ["*"],
                 "VECTOR_DB_HOST": os.getenv("VECTOR_DB_HOST", "http://localhost"),
                 "VECTOR_DB_PORT": os.getenv("VECTOR_DB_PORT", "8000"),
-                "VECTOR_COLLECTION_NAME": os.getenv("VECTOR_COLLECTION_NAME", "time_series_collection"),
+                # "VECTOR_COLLECTION_NAME": os.getenv("VECTOR_COLLECTION_NAME", "time_series_collection"), # Ts2Vec
+                "VECTOR_COLLECTION_NAME": os.getenv("VECTOR_COLLECTION_NAME", "time_series_collection_trep"),
                 "VECTOR_DB_TOP_K": os.getenv("VECTOR_DB_TOP_K", 10),
                 "POSTGRESQL_URL": os.getenv("POSTGRESQL_URL", "e2m3.iptime.org"),
                 "POSTGRESQL_PORT": os.getenv("POSTGRESQL_PORT", "5432"),
@@ -65,7 +66,7 @@ class Pipeline:
                 "POSTGRESQL_PASSWORD": os.getenv("POSTGRESQL_PASSWORD", "inha3345!!"),
                 "OLLAMA_HOST": os.getenv("OLLAMA_HOST", "http://localhost:11434"),
                 # "TEXT_TO_TS_TO_EMBEDDING_MODEL": os.getenv("TEXT_TO_TS_TO_EMBEDDING_MODEL", "Bllossom-8B:latest"),
-                "TEXT_TO_TS_TO_EMBEDDING_MODEL": os.getenv("TEXT_TO_TS_TO_EMBEDDING_MODEL", "qwen3:30b-a3b"),
+                "TEXT_TO_TS_TO_EMBEDDING_MODEL": os.getenv("TEXT_TO_TS_TO_EMBEDDING_MODEL", "qwen3:30b"),
                 # "TASK_MODEL": os.getenv("TASK_MODEL", "Bllossom-8B:latest"),
                 "TASK_MODEL": os.getenv("TASK_MODEL", "qwen3:30b"), # 현재 사용 x
                 "ADDITIONAL_DAYS": os.getenv("ADDITIONAL_DAYS", 14),
@@ -94,12 +95,13 @@ class Pipeline:
         #     weight_path=self.embedding_model_path, device="cuda")
 
         # T-Rep embedding function
+        # All models were trained with time_embedding='t2v_sin'
         self.embedding_functions = {
             elem: TRepEmbedding(
             weight_path=path,
             device="cuda",
             encoding_window='full_series',
-            time_embedding='learnable'  # or 't2v_sin', 'gaussian', etc.
+            time_embedding='t2v_sin'  # Time2Vec with sine - used during training
             )
             for elem, path in self.embedding_model_path.items()
         }
